@@ -1,19 +1,19 @@
 from datetime import date, timedelta
 from typing import Union
-from lxml.html import fromstring
+import inspect
 
-import utils
+from .utils import *  # relative import
 
 
 def get_page_data(link: str, tree: fromstring = None) -> Union[dict, list]:
     """Gets the data from the link/tree and returns it as a dictionary or a list of dictionaries"""
     if not tree:
         if "statistics.html" in link:
-            link = utils.redirect_statistics(link)
-        tree = utils.get_tree(link)
+            link = redirect_statistics(link)
+        tree = get_tree(link)
     function_name = link.split("/")[-1].split(".")[0]
     try:
-        function = locals()[function_name]
+        function = globals()[function_name]
     except KeyError:
         return {"error": "function not found"}
     num_args = function.__code__.co_argcount
@@ -24,8 +24,8 @@ def get_page_data(link: str, tree: fromstring = None) -> Union[dict, list]:
 
 
 def get_supported_functions() -> list:
-    """Returns a list of supported functions"""
-    return [x for x in locals() if not x.startswith("_") and x != "get_page_data" and x != "get_supported_functions"]
+    return [func.__name__ for func in globals().values() if inspect.isfunction(func) and func.__module__ == __name__
+            and func.__name__ not in ("get_page_data", "get_supported_functions")]
 
 
 def article(tree: fromstring) -> dict:
@@ -33,7 +33,7 @@ def article(tree: fromstring) -> dict:
     title = tree.xpath('//*[@class="articleTitle"]/text()')[0]
     subs, votes = [int(x.strip()) for x in tree.xpath('//*[@class="bigArticleTab"]/text()')]
     author_name, newspaper_name = tree.xpath('//*[@class="mobileNewspaperStatus"]/a/text()')
-    author_id = int(utils.get_ids_from_path(tree, '//*[@id="mobileNewspaperStatusContainer"]/div[1]/a')[0])
+    author_id = int(get_ids_from_path(tree, '//*[@id="mobileNewspaperStatusContainer"]/div[1]/a')[0])
     newspaper_id = int(tree.xpath('//*[@class="mobileNewspaperStatus"]/a/@href')[-1].split("=")[1])
     result = {"posted": posted, "title": title, "author": author_name.strip(), "author_id": author_id, "votes": votes,
               "newspaper": newspaper_name, "newspaper_id": newspaper_id, "subs": subs}
@@ -93,7 +93,7 @@ def congressElections(tree: fromstring) -> dict:
     country_id = int(tree.xpath('//*[@id="countryId"]//option[@selected="selected"]/@value')[0])
     date = tree.xpath('//*[@id="date"]//option[@selected="selected"]')[0].text
     candidates = tree.xpath("//tr//td[2]//a/text()")
-    candidates_ids = utils.get_ids_from_path(tree, "//tr//td[2]//a")
+    candidates_ids = get_ids_from_path(tree, "//tr//td[2]//a")
     parties = tree.xpath("//tr//td[4]//div/a/text()")
     parties_links = tree.xpath("//tr//td[4]//div/a/@href")
     votes = [x.replace("-", "0").strip() for x in tree.xpath("//tr[position()>1]//td[5]//text()")
@@ -113,7 +113,7 @@ def presidentalElections(tree: fromstring) -> dict:
     country_id = int(tree.xpath('//*[@id="countryId"]//option[@selected="selected"]/@value')[0])
     date = tree.xpath('//*[@id="date"]//option[@selected="selected"]')[0].text
     candidates = tree.xpath("//tr//td[2]//a/text()")
-    candidates_ids = utils.get_ids_from_path(tree, "//tr//td[2]//a")
+    candidates_ids = get_ids_from_path(tree, "//tr//td[2]//a")
     votes = [x.replace("-", "0").strip() for x in tree.xpath("//tr[position()>1]//td[4]//text()")
              if x.strip()] or [0] * len(candidates)
     result = {"country": country, "country_id": country_id, "date": date, "candidates": []}
@@ -130,14 +130,14 @@ def battleDrops(tree: fromstring, link: str) -> dict:
     if "showSpecialItems" in link:
         nicks = tree.xpath("//tr[position()>1]//td[2]//a/text()")
         items = [x.strip() for x in tree.xpath("//tr[position()>1]//td[1]//text()") if x.strip()]
-        ids = utils.get_ids_from_path(tree, "//tr[position()>1]//td[2]//a")
+        ids = get_ids_from_path(tree, "//tr[position()>1]//td[2]//a")
         for nick, item, citizen_id in zip(nicks, items, ids):
             result["drops"].append({"nick": nick.strip(), "item": item, "citizen_id": int(citizen_id)})
     else:
         nicks = tree.xpath("//tr[position()>1]//td[4]//a/text()")
         qualities = tree.xpath("//tr[position()>1]//td[2]/text()")
         items = tree.xpath("//tr[position()>1]//td[3]/text()")
-        ids = utils.get_ids_from_path(tree, "//tr[position()>1]//td[4]//a")
+        ids = get_ids_from_path(tree, "//tr[position()>1]//td[4]//a")
         for nick, quality, item, citizen_id in zip(nicks, qualities, items, ids):
             result["drops"].append({"nick": nick.strip(), "citizen_id": int(citizen_id), "item": item.strip(),
                                     "quality": int(quality.replace("Q", ""))})
@@ -153,7 +153,7 @@ def jobMarket(tree: fromstring) -> dict:
     company_types = []
     qualities = []
     products = tree.xpath('//*[@id="esim-layout"]//td[3]/div/div/img/@src')
-    for p in utils.chunker(products, 2):
+    for p in chunker(products, 2):
         product, quality = [x.split("/")[-1].split(".png")[0] for x in p]
         product = product.replace("Defense System", "Defense_System").strip()
         quality = quality.replace("q", "").strip()
@@ -181,7 +181,7 @@ def newCitizens(tree: fromstring) -> dict:
     registered = tree.xpath('//tr[position()>1]//td[4]/text()')
     locations = tree.xpath('//tr[position()>1]//td[5]/a/text()')
     location_links = tree.xpath('//td[5]/a/@href')
-    ids = utils.get_ids_from_path(tree, "//td[1]/a")
+    ids = get_ids_from_path(tree, "//td[1]/a")
     result = {"country": country, "country_id": country_id, "new_citizens": []}
     for nick, level, experience, registered, location, location_link, citizen_id in zip(
             nicks, levels, experiences, registered, locations, location_links, ids):
@@ -224,7 +224,7 @@ def region(tree: fromstring) -> dict:
     rounds = tree.xpath('//*[@id="esim-layout"]//table[2]//td[2]/b/text()')
     buildings = tree.xpath('//*[@id="esim-layout"]//table[2]//td[1]/div/div/img/@src')
     building_places = {}
-    for round_number, p in zip(rounds, utils.chunker(buildings, 2)):
+    for round_number, p in zip(rounds, chunker(buildings, 2)):
         building, quality = [x.split("/")[-1].split(".png")[0] for x in p]
         building = building.replace("Defense System", "Defense_System").strip()
         building_places[int(round_number)] = f"{quality.strip().upper()} {building}"
@@ -341,7 +341,7 @@ def stockCompanyMoney(tree: fromstring) -> dict:
 def achievement(tree: fromstring) -> dict:
     last_page = tree.xpath("//ul[@id='pagination-digg']//li[last()-1]//@href") or ['page=1']
     last_page = int(last_page[0].split('page=')[1])
-    ids = utils.get_ids_from_path(tree, '//*[@id="esim-layout"]//div[3]//div/a')
+    ids = get_ids_from_path(tree, '//*[@id="esim-layout"]//div[3]//div/a')
     nicks = [x.strip() for x in tree.xpath('//*[@id="esim-layout"]//div[3]//div/a/text()')]
     category, achieved_by = [x.split(":")[1].strip() for x in
                              tree.xpath('//*[@id="esim-layout"]//div[1]//div[2]/text()') if x.strip()]
@@ -387,7 +387,7 @@ def citizenStatistics(tree: fromstring, link: str) -> dict:
     except:
         statistic_type = tree.xpath('//*[@name="statisticType"]//option[1]')[0].text
     country_id = int(tree.xpath('//*[@id="countryId"]//option[@selected="selected"]/@value')[0])
-    ids = utils.get_ids_from_path(tree, "//td/a")
+    ids = get_ids_from_path(tree, "//td/a")
     nicks = tree.xpath("//td/a/text()")
     countries = tree.xpath("//td[3]/b/text()")
     values = tree.xpath("//tr[position()>1]//td[4]/text()") if citizens else tree.xpath(
@@ -426,7 +426,7 @@ def coalitionStatistics(tree: fromstring) -> list:
             coalition_id = int(tree.xpath(f'//tr[{tr}]//td[1]//span'))
             name = tree.xpath(f'//tr[{tr}]//td[2]//span/text()') or ["-"]
             leader = tree.xpath(f'//tr[{tr}]//td[3]/a/text()') or ["-"]
-            leader_id = (utils.get_ids_from_path(tree, f'//tr[{tr}]//td[3]/a/@href') or [0])[0]
+            leader_id = (get_ids_from_path(tree, f'//tr[{tr}]//td[3]/a/@href') or [0])[0]
             members = int(tree.xpath(f'//tr[{tr}]//td[4]//span')[0].text)
             regions = int(tree.xpath(f'//tr[{tr}]//td[5]//span')[0].text)
             citizens = int(tree.xpath(f'//tr[{tr}]//td[6]//span')[0].text)
@@ -484,7 +484,7 @@ def newspaperStatistics(tree: fromstring) -> dict:
 
     indexes = [int(x.strip()) for x in tree.xpath("//tr[position()>1]//td[1]/text()")]
     redactors = [x.strip() for x in tree.xpath("//tr//td[2]/a/text()")]
-    redactor_ids = utils.get_ids_from_path(tree, "//tr//td[2]/a")
+    redactor_ids = get_ids_from_path(tree, "//tr//td[2]/a")
     newspaper_names = tree.xpath("//tr//td[3]/span/a/text()")
     newspaper_ids = [int(x.split("?id=")[1]) for x in tree.xpath("//tr//td[3]/span/a/@href")]
     subs = [int(x) for x in tree.xpath("//tr[position()>1]//td[4]/b/text()")]
@@ -544,7 +544,7 @@ def companiesForSale(tree: fromstring) -> list:
     company_types = []
     qualities = []
     products = tree.xpath('//tr//td[2]//div//div//img/@src')
-    for p in utils.chunker(products, 2):
+    for p in chunker(products, 2):
         product, quality = [x.split("/")[-1].split(".png")[0] for x in p]
         product = product.replace("Defense System", "Defense_System").strip()
         quality = quality.replace("q", "").strip()
@@ -553,7 +553,7 @@ def companiesForSale(tree: fromstring) -> list:
     location_names = tree.xpath('//tr//td[3]/b/a/text()')
     countries = tree.xpath('//tr//td[3]/span[last()]/text()')
     location_ids = [int(x.split("?id=")[1]) for x in tree.xpath('//tr//td[3]//a/@href')]
-    seller_ids = utils.get_ids_from_path(tree, '//tr//td[4]//a')
+    seller_ids = get_ids_from_path(tree, '//tr//td[4]//a')
     seller_names = [x.replace("\xa0", "") for x in tree.xpath('//tr//td[4]//a/text()')]
     seller_types = tree.xpath('//tr//td[4]//b/text()')
     prices = [float(x.replace(" Gold", "")) for x in tree.xpath('//tr//td[5]//b/text()')]
@@ -576,7 +576,7 @@ def countryPoliticalStatistics(tree: fromstring) -> dict:
     for minister in ["Defense", "Finance", "Social"]:
         ministry = tree.xpath(f'//*[@id="ministryOf{minister}"]//div//div[2]/a[1]/text()')
         try:
-            link = int(utils.get_ids_from_path(tree, f'//*[@id="ministryOf{minister}"]//div//div[2]/a[1]')[0])
+            link = int(get_ids_from_path(tree, f'//*[@id="ministryOf{minister}"]//div//div[2]/a[1]')[0])
         except:
             continue
         result["minister_of_" + minister.lower()] = {"id": link, "nick": ministry[0]}
@@ -588,7 +588,7 @@ def countryPoliticalStatistics(tree: fromstring) -> dict:
         result["country_order"] = orders[0]
         result["coalition_order"] = orders[1]
     congress = tree.xpath('//*[@id="congressByParty"]//a/text()')
-    congress_links = utils.get_ids_from_path(tree, '//*[@id="congressByParty"]//a')
+    congress_links = get_ids_from_path(tree, '//*[@id="congressByParty"]//a')
     result["congress"] = [{"nick": congress.strip(), "id": int(link)} for congress, link in
                           zip(congress, congress_links)]
     coalition = tree.xpath('//*[@id="mobileCountryPoliticalStats"]/span/text()')
@@ -619,7 +619,7 @@ def newspaper(tree: fromstring) -> dict:
     last_page = int(last_page[0].split('page=')[1])
     subs = int(tree.xpath('//*[@id="mobileNewspaperStatusContainer"]//div[3]//div/text()')[0].strip())
     redactor = tree.xpath('//*[@id="mobileNewspaperStatusContainer"]/div[1]/a/text()')[0].strip()
-    redactor_id = int(utils.get_ids_from_path(tree, '//*[@id="mobileNewspaperStatusContainer"]/div[1]//a')[0])
+    redactor_id = int(get_ids_from_path(tree, '//*[@id="mobileNewspaperStatusContainer"]/div[1]//a')[0])
     result = {"subs": subs, "pages": last_page, "redactor": redactor, "redactor_id": redactor_id,
               "articles": [{"title": title, "id": article_id, "posted": posted, "votes": votes} for
                            title, article_id, posted, votes in zip(
@@ -723,7 +723,7 @@ def battles(tree: fromstring) -> dict:
     defenders_dmg = tree.xpath('//*[@id="defenderDamage"]/text()')
     counters = [i.split(");\n")[0] for i in tree.xpath('//*[@id="battlesTable"]//div//div//script/text()') for i in
                 i.split("() + ")[1:]]
-    counters = [f'{int(x[0]):02d}:{int(x[1]):02d}:{int(x[2]):02d}' for x in utils.chunker(counters, 3)]
+    counters = [f'{int(x[0]):02d}:{int(x[1]):02d}:{int(x[2]):02d}' for x in chunker(counters, 3)]
     sides = tree.xpath('//*[@class="battleHeader"]//em/text()')
     battle_ids = tree.xpath('//*[@class="battleHeader"]//a/@href')
     battle_regions = tree.xpath('//*[@class="battleHeader"]//a/text()')
@@ -764,7 +764,7 @@ def profile(tree: fromstring) -> dict:
     debts = sum(float(x) for x in tree.xpath('//*[@class="profile-data red"]//li/text()')[::6])
     assets = sum(float(x.strip()) for x in tree.xpath(
         '//*[@class="profile-data" and (strong = "Assets")]//ul//li/text()') if "\n" in x)
-    is_online = tree.xpath('//*[@id="loginBar"]/span[2]/@class')[0] == "online"
+    is_online = tree.xpath('//*[@id="loginBar"]/div/span[2]/@class')[0] == "online"
 
     medals = {}
     for i, medal in enumerate(medals_headers, 1):
@@ -777,8 +777,8 @@ def profile(tree: fromstring) -> dict:
             medals[medal.lower()] = 0
 
     buffs_debuffs = [
-        utils.camel_case_merge(x.split("/specialItems/")[-1].split(".png")[0]).replace("Elixir", "") for x in
-        tree.xpath('//*[@class="profile-result" and (strong="Debuffs" or strong="Buffs")]//img/@src') if
+        camel_case_merge(x.split("/specialItems/")[-1].split(".png")[0]).replace("Elixir", "") for x in
+        tree.xpath('//*[@class="profile-row" and (strong="Debuffs" or strong="Buffs")]//img/@src') if
         "//cdn.e-sim.org//img/specialItems/" in x]
     buffs = [x.split("_")[0].replace("Vacations", "Vac").replace("Resistance", "Sewer").replace(
         "Pain Dealer", "PD ").replace("Bonus Damage", "").replace("  ", " ") + (
@@ -818,6 +818,3 @@ def profile(tree: fromstring) -> dict:
     if status:
         result.update({"last_login": status})
     return result
-
-# for readme:
-# print("\n- ".join(sorted([str(x) for x in locals() if not x.startswith("__")])))
