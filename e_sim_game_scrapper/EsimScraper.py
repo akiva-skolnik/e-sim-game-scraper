@@ -379,6 +379,10 @@ def countryEconomyStatistics(tree: fromstring) -> dict:
     return result
 
 
+def stockCompanyStatistics(tree: fromstring, link: str) -> dict:
+    return citizenStatistics(tree, link)
+
+
 def citizenStatistics(tree: fromstring, link: str) -> dict:
     citizens = "citizenStatistics" in link
     country = tree.xpath('//*[@id="countryId"]//option[@selected="selected"]')[0].text
