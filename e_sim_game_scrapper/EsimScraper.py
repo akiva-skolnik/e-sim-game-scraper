@@ -731,7 +731,7 @@ def battles(tree: fromstring) -> dict:
     sides = tree.xpath('//*[@class="battleHeader"]//em/text()')
     battle_ids = tree.xpath('//*[@class="battleHeader"]//a/@href')
     battle_regions = tree.xpath('//*[@class="battleHeader"]//a/text()')
-    scores = tree.xpath('//*[@class="battleFooterScore hoverText"]/text()')
+    scores = tree.xpath('//*[@class="battleFooterScore hovertext"]/text()')
     result = {"pages": last_page, "sorting": sorting, "filter": filtering, "country": country, "country_id": country_id,
               "battles": []}
     for i, (dmg, progress_attacker, counter, sides, battle_id, battle_region, score) in enumerate(zip(
