@@ -1,6 +1,6 @@
+import inspect
 from datetime import date, timedelta
 from typing import Union
-import inspect
 
 from .utils import *  # relative import
 

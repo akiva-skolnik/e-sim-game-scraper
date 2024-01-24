@@ -1,7 +1,8 @@
 """utils.py"""
 from re import finditer
-from lxml.html import fromstring
+
 import requests
+from lxml.html import fromstring
 
 
 def get_tree(link: str) -> fromstring:
