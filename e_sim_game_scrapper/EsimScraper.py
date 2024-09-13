@@ -41,24 +41,21 @@ def article(tree: fromstring) -> dict:
 
 
 def auction(tree: fromstring) -> dict:
-    seller = tree.xpath("//div[1]//table[1]//tr[2]//td[1]//a/text()")[0]
-    buyer = tree.xpath("//div[1]//table[1]//tr[2]//td[2]//a/text()") or ["None"]
-    item = tree.xpath("//*[@id='esim-layout']//div[1]//tr[2]//td[3]/b/text()")
-    if not item:
-        item = [x.strip() for x in tree.xpath("//*[@id='esim-layout']//div[1]//tr[2]//td[3]/text()") if x.strip()]
-    price = float(tree.xpath("//div[1]//table[1]//tr[2]//td[4]//b//text()")[0])
-    bidders = int(tree.xpath('//*[@id="esim-layout"]//div[1]//table//tr[2]//td[5]/b')[0].text)
-    time1 = tree.xpath('//*[@id="esim-layout"]//div[1]//table//tr[2]//td[6]/span/text()')
-    if not time1:
-        time1 = [x.strip() for x in tree.xpath('//*[@id="esim-layout"]//div[1]//table//tr[2]//td[6]/text()') if
-                 x.strip()]
-        reminding_seconds = -1
+    info = tree.xpath('//button[@class="btn-buy btn-yellow"]')[0]
+    seller = info.get('data-seller')
+    buyer = info.get('data-top-bidder')
+    item = " ".join(info.get('data-auction-item').split()[:2]).replace("_", " ")
+    price = info.get('data-current-price')
+    time_remaining = tree.xpath('//*[@class="auctionTime"]//span/text()')
+    if not time_remaining:  # finished
+        time_remaining = strip(tree.xpath('//*[@class="auctionTime"]/text()'))[0]
+        remaining_seconds = -1
     else:
-        time1 = [int(x) for x in time1[0].split(":")]
-        reminding_seconds = time1[0] * 60 * 60 + time1[1] * 60 + time1[2]
-        time1 = [f'{time1[0]:02d}:{time1[1]:02d}:{time1[2]:02d}']
-    result = {"seller": seller.strip(), "buyer": buyer[0].strip(), "item": item[0],
-              "price": price, "time": time1[0], "bidders": bidders, "reminding_seconds": reminding_seconds}
+        time_remaining = tuple(int(x) for x in time_remaining[0].split(":"))
+        remaining_seconds = time_remaining[0] * 60 * 60 + time_remaining[1] * 60 + time_remaining[2]
+        time_remaining = f'{time_remaining[0]:02d}:{time_remaining[1]:02d}:{time_remaining[2]:02d}'
+    result = {"seller": seller.strip(), "buyer": buyer.strip(), "item": item,
+              "price": price, "time": time_remaining, "remaining_seconds": remaining_seconds}
     return result
 
 
