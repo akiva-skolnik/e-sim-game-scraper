@@ -5,7 +5,7 @@ from typing import Union
 from .utils import *  # relative import
 
 
-def get_page_data(link: str, tree: fromstring = None) -> Union[dict, list]:
+def get_page_data(link: str, tree: HtmlElement = None) -> Union[dict, list]:
     """Gets the data from the link/tree and returns it as a dictionary or a list of dictionaries"""
     if not tree:
         if "statistics.html" in link:
@@ -28,7 +28,7 @@ def get_supported_functions() -> list:
             and func.__name__ not in ("get_page_data", "get_supported_functions")]
 
 
-def article(tree: fromstring) -> dict:
+def article(tree: HtmlElement) -> dict:
     posted = " ".join(tree.xpath('//*[@class="mobile_article_preview_width_fix"]/text()')[0].split()[1:-1])
     title = tree.xpath('//*[@class="articleTitle"]/text()')[0]
     subs, votes = [int(x.strip()) for x in tree.xpath('//*[@class="bigArticleTab"]/text()')]
@@ -40,7 +40,7 @@ def article(tree: fromstring) -> dict:
     return result
 
 
-def auction(tree: fromstring) -> dict:
+def auction(tree: HtmlElement) -> dict:
     info = tree.xpath('//button[@class="btn-buy btn-yellow"]')[0]
     seller = info.get('data-seller')
     buyer = info.get('data-top-bidder')
@@ -59,7 +59,7 @@ def auction(tree: fromstring) -> dict:
     return result
 
 
-def showShout(tree: fromstring) -> dict:
+def showShout(tree: HtmlElement) -> dict:
     shout = [x.strip() for x in tree.xpath('//*[@class="shoutContainer"]//div//div[1]//text()') if x.strip()]
     shout = "\n".join([x.replace("★", "") for x in shout]).strip()
     author = tree.xpath('//*[@class="shoutAuthor"]//a/text()')[0].strip()
@@ -68,7 +68,7 @@ def showShout(tree: fromstring) -> dict:
     return result
 
 
-def law(tree: fromstring) -> dict:
+def law(tree: HtmlElement) -> dict:
     time1 = tree.xpath('//*[@id="esim-layout"]//script[3]/text()')[0]
     time1 = [i.split(");\n")[0] for i in time1.split("() + ")[1:]]
     if int(time1[0]) < 0:
@@ -85,7 +85,7 @@ def law(tree: fromstring) -> dict:
     return result
 
 
-def congressElections(tree: fromstring) -> dict:
+def congressElections(tree: HtmlElement) -> dict:
     country = tree.xpath('//*[@id="countryId"]//option[@selected="selected"]')[0].text
     country_id = int(tree.xpath('//*[@id="countryId"]//option[@selected="selected"]/@value')[0])
     date = tree.xpath('//*[@id="date"]//option[@selected="selected"]')[0].text
@@ -105,7 +105,7 @@ def congressElections(tree: fromstring) -> dict:
     return result
 
 
-def presidentalElections(tree: fromstring) -> dict:
+def presidentalElections(tree: HtmlElement) -> dict:
     country = tree.xpath('//*[@id="countryId"]//option[@selected="selected"]')[0].text
     country_id = int(tree.xpath('//*[@id="countryId"]//option[@selected="selected"]/@value')[0])
     date = tree.xpath('//*[@id="date"]//option[@selected="selected"]')[0].text
@@ -120,7 +120,7 @@ def presidentalElections(tree: fromstring) -> dict:
     return result
 
 
-def battleDrops(tree: fromstring, link: str) -> dict:
+def battleDrops(tree: HtmlElement, link: str) -> dict:
     last_page = tree.xpath("//ul[@id='pagination-digg']//li[last()-1]//@href") or ['page=1']
     last_page = int(last_page[0].split('page=')[1])
     result = {"pages": last_page, "drops": []}
@@ -141,7 +141,7 @@ def battleDrops(tree: fromstring, link: str) -> dict:
     return result
 
 
-def jobMarket(tree: fromstring) -> dict:
+def jobMarket(tree: HtmlElement) -> dict:
     country = tree.xpath('//*[@id="countryId"]//option[@selected="selected"]')[0].text
     country_id = int(tree.xpath('//*[@id="countryId"]//option[@selected="selected"]/@value')[0])
     employers = tree.xpath('//*[@id="esim-layout"]//td[1]/a/text()')
@@ -169,7 +169,7 @@ def jobMarket(tree: fromstring) -> dict:
     return result
 
 
-def newCitizens(tree: fromstring) -> dict:
+def newCitizens(tree: HtmlElement) -> dict:
     country = tree.xpath('//*[@id="countryId"]//option[@selected="selected"]')[0].text
     country_id = int(tree.xpath('//*[@id="countryId"]//option[@selected="selected"]/@value')[0])
     nicks = tree.xpath('//td[1]/a/text()')
@@ -189,7 +189,7 @@ def newCitizens(tree: fromstring) -> dict:
     return result
 
 
-def region(tree: fromstring) -> dict:
+def region(tree: HtmlElement) -> dict:
     owner = tree.xpath('//*[@id="esim-layout"]//div[1]//tr[2]//td[1]//span')[0].text
     rightful_owner = tree.xpath('//*[@id="esim-layout"]//div[1]//tr[2]//td[2]//span')[0].text
     region_name = tree.xpath('//*[@id="esim-layout"]//h1')[0].text.replace("Region ", "")
@@ -236,7 +236,7 @@ def region(tree: fromstring) -> dict:
     return result
 
 
-def monetaryMarket(tree: fromstring) -> dict:
+def monetaryMarket(tree: HtmlElement) -> dict:
     sellers = tree.xpath("//*[@class='seller']/a/text()")
     if not sellers:
         return {"error": "no offers", "offers": []}
@@ -253,7 +253,7 @@ def monetaryMarket(tree: fromstring) -> dict:
     return result
 
 
-def stockCompany(tree: fromstring) -> dict:
+def stockCompany(tree: HtmlElement) -> dict:
     sc_name = tree.xpath("//span[@class='big-login']")[0].text
     ceo = (tree.xpath('//*[@id="partyContainer"]//div//div[1]//div//div[1]//div[2]/a/text()') or ["No CEO"])[0].strip()
     ceo_status = tree.xpath('//*[@id="partyContainer"]//div//div[1]//div//div[1]//div[2]//a/@style') or [
@@ -287,7 +287,7 @@ def stockCompany(tree: fromstring) -> dict:
     return result
 
 
-def stockCompanyProducts(tree: fromstring) -> dict:
+def stockCompanyProducts(tree: HtmlElement) -> dict:
     result = {}
     amount = [int(x.strip()) for x in tree.xpath('//*[@id="esim-layout"]//center//div//div//div[1]/text()')]
     products = [x.split("/")[-1].split(".png")[0] for x in
@@ -320,7 +320,7 @@ def stockCompanyProducts(tree: fromstring) -> dict:
     return result
 
 
-def stockCompanyMoney(tree: fromstring) -> dict:
+def stockCompanyMoney(tree: HtmlElement) -> dict:
     coins = [x.strip() for x in tree.xpath('//*[@id="esim-layout"]//div[3]//div/text()') if x.strip()]
     stock = tree.xpath('//*[@id="esim-layout"]//div[3]//div//b/text()')
     result = {"storage": [{k: float(v) for k, v in zip(coins, stock)}]}
@@ -335,7 +335,7 @@ def stockCompanyMoney(tree: fromstring) -> dict:
     return result
 
 
-def achievement(tree: fromstring) -> dict:
+def achievement(tree: HtmlElement) -> dict:
     last_page = tree.xpath("//ul[@id='pagination-digg']//li[last()-1]//@href") or ['page=1']
     last_page = int(last_page[0].split('page=')[1])
     ids = get_ids_from_path(tree, '//*[@id="esim-layout"]//div[3]//div/a')
@@ -349,17 +349,17 @@ def achievement(tree: fromstring) -> dict:
     return result
 
 
-def countryEconomyStatistics(tree: fromstring) -> dict:
+def countryEconomyStatistics(tree: HtmlElement) -> dict:
     country = tree.xpath('//*[@id="countryId"]//option[@selected="selected"]')[0].text
     country_id = int(tree.xpath('//*[@id="countryId"]//option[@selected="selected"]/@value')[0])
     links = [int(x.split("id=")[1]) for x in tree.xpath('//*[@id="esim-layout"]//table[1]//td[1]/a/@href')]
     regions = tree.xpath('//*[@id="esim-layout"]//table[1]//td[1]/a/text()')
     regions = [dict(zip(links, regions))]
-    population = [x.strip().replace(":", "").replace(" ", "_").lower() for x in
-                  tree.xpath('//*[@id="esim-layout"]//div[2]//div[2]//table//tr//td/text()') if x.strip()]
+    population_list = [x.strip().replace(":", "").replace(" ", "_").lower() for x in
+                       tree.xpath('//*[@id="esim-layout"]//div[2]//div[2]//table//tr//td/text()') if x.strip()]
     minimal_salary = tree.xpath('//*[@id="esim-layout"]//div[2]//table//tr[6]//td[2]/b')[0].text
-    population[-1] = minimal_salary
-    population = dict(zip(population[::2], [float(x) for x in population[1::2]]))
+    population_list[-1] = minimal_salary
+    population = dict(zip(population_list[::2], [float(x) for x in population_list[1::2]]))
     treasury_keys = [x.strip() for x in
                      tree.xpath('//*[@id="esim-layout"]//div[2]//div[5]//table//tr[position()>1]//td/text()') if
                      x.strip()]
@@ -376,11 +376,11 @@ def countryEconomyStatistics(tree: fromstring) -> dict:
     return result
 
 
-def stockCompanyStatistics(tree: fromstring, link: str) -> dict:
+def stockCompanyStatistics(tree: HtmlElement, link: str) -> dict:
     return citizenStatistics(tree, link)
 
 
-def citizenStatistics(tree: fromstring, link: str) -> dict:
+def citizenStatistics(tree: HtmlElement, link: str) -> dict:
     citizens = "citizenStatistics" in link
     country = tree.xpath('//*[@id="countryId"]//option[@selected="selected"]')[0].text
     try:
@@ -410,7 +410,7 @@ def citizenStatistics(tree: fromstring, link: str) -> dict:
     return result
 
 
-def countryStatistics(tree: fromstring) -> dict:
+def countryStatistics(tree: HtmlElement) -> dict:
     statistic_type = tree.xpath('//*[@name="statisticType"]//option[@selected="selected"]')[0].text
     countries = tree.xpath("//td/b/text()")[1:]
     values = tree.xpath("//td[3]/text()")[1:]
@@ -420,7 +420,7 @@ def countryStatistics(tree: fromstring) -> dict:
     return result
 
 
-def coalitionStatistics(tree: fromstring) -> list:
+def coalitionStatistics(tree: HtmlElement) -> list:
     result = []
     for tr in range(2, 103):  # First 100
         try:
@@ -441,7 +441,7 @@ def coalitionStatistics(tree: fromstring) -> list:
     return result
 
 
-def newCitizenStatistics(tree: fromstring) -> list:
+def newCitizenStatistics(tree: HtmlElement) -> list:
     names = [x.strip() for x in tree.xpath("//tr//td[1]/a/text()")]
     citizen_ids = [int(x.split("?id=")[1]) for x in tree.xpath("//tr//td[1]/a/@href")]
     countries = tree.xpath("//tr//td[2]/span/text()")
@@ -460,7 +460,7 @@ def newCitizenStatistics(tree: fromstring) -> list:
     return result
 
 
-def partyStatistics(tree: fromstring) -> list:
+def partyStatistics(tree: HtmlElement) -> list:
     country = tree.xpath("//tr//td[2]/b/text()")[:50]
     party_name = tree.xpath("//tr//td[3]//div/a/text()")[:50]
     party_id = [int(x.split("?id=")[1]) for x in tree.xpath("//tr//td[3]//div/a/@href")][:50]
@@ -478,7 +478,7 @@ def partyStatistics(tree: fromstring) -> list:
     return result
 
 
-def newspaperStatistics(tree: fromstring) -> dict:
+def newspaperStatistics(tree: HtmlElement) -> dict:
     last_page = tree.xpath("//ul[@id='pagination-digg']//li[last()-1]//@href") or ['page=1']
     last_page = int(last_page[0].split('page=')[1])
     result = {"pages": last_page, "newspapers": []}
@@ -496,7 +496,7 @@ def newspaperStatistics(tree: fromstring) -> dict:
     return result
 
 
-def news(tree: fromstring) -> dict:
+def news(tree: HtmlElement) -> dict:
     country = tree.xpath('//*[@id="country"]//option[@selected="selected"]')[0].text
     country_id = int(tree.xpath('//*[@id="country"]//option[@selected="selected"]/@value')[0])
     news_type = tree.xpath('//*[@id="newsType"]//option[@selected="selected"]')[0].text
@@ -518,7 +518,7 @@ def news(tree: fromstring) -> dict:
     return result
 
 
-def events(tree: fromstring) -> dict:
+def events(tree: HtmlElement) -> dict:
     last_page = tree.xpath("//ul[@id='pagination-digg']//li[last()-1]//@href") or ['page=1']
     last_page = int(last_page[0].split('page=')[1])
     country = tree.xpath('//*[@id="country"]//option[@selected="selected"]')[0].text
@@ -539,7 +539,7 @@ def events(tree: fromstring) -> dict:
     return result
 
 
-def companiesForSale(tree: fromstring) -> list:
+def companiesForSale(tree: HtmlElement) -> list:
     company_ids = [int(x.split("?id=")[1]) for x in tree.xpath('//tr//td[1]//a/@href')]
     company_names = [x.strip() for x in tree.xpath('//tr//td[1]/a/text()')]
     company_types = []
@@ -572,7 +572,7 @@ def companiesForSale(tree: fromstring) -> list:
     return result
 
 
-def countryPoliticalStatistics(tree: fromstring) -> dict:
+def countryPoliticalStatistics(tree: HtmlElement) -> dict:
     result = {}
     for minister in ["Defense", "Finance", "Social"]:
         ministry = tree.xpath(f'//*[@id="ministryOf{minister}"]//div//div[2]/a[1]/text()')
@@ -609,7 +609,7 @@ def countryPoliticalStatistics(tree: fromstring) -> dict:
     return result
 
 
-def newspaper(tree: fromstring) -> dict:
+def newspaper(tree: HtmlElement) -> dict:
     titles = tree.xpath('//*[@id="esim-layout"]//table//tr//td//div[2]//a[1]/text()')
     article_ids = [int(x.split("?id=")[1]) for x in
                    tree.xpath('//*[@id="esim-layout"]//table//tr//td//div[2]//a[1]/@href')]
@@ -628,7 +628,7 @@ def newspaper(tree: fromstring) -> dict:
     return result
 
 
-def party(tree: fromstring) -> dict:
+def party(tree: HtmlElement) -> dict:
     name = tree.xpath('//*[@id="unitStatusHead"]//div/a/text()')[0]
     country = tree.xpath('//*[@class="countryNameTranslated"]/text()')[0]
     result = {"members_list": [], "country": country, "name": name}
@@ -652,7 +652,7 @@ def party(tree: fromstring) -> dict:
     return result
 
 
-def productMarket(tree: fromstring) -> dict:
+def productMarket(tree: HtmlElement) -> dict:
     last_page = tree.xpath("//ul[@id='pagination-digg']//li[last()-1]//@href") or ['page=1']
     last_page = int(last_page[0].split('page=')[1])
 
@@ -686,7 +686,7 @@ def productMarket(tree: fromstring) -> dict:
     return result
 
 
-def battlesByWar(tree: fromstring) -> dict:
+def battlesByWar(tree: HtmlElement) -> dict:
     last_page = tree.xpath("//ul[@id='pagination-digg']//li[last()-1]//@href") or ['page=1']
     last_page = int(last_page[0].split('page=')[1])
     war = tree.xpath('//*[@name="id"]//option[@selected="selected"]')[0].text.strip()
@@ -710,7 +710,7 @@ def battlesByWar(tree: fromstring) -> dict:
     return result
 
 
-def battles(tree: fromstring) -> dict:
+def battles(tree: HtmlElement) -> dict:
     last_page = tree.xpath("//ul[@id='pagination-digg']//li[last()-1]//@href") or ['page=1']
     last_page = int(last_page[0].split('page=')[1])
     country = tree.xpath('//*[@id="countryId"]//option[@selected="selected"]')[0].text
@@ -751,7 +751,7 @@ def battles(tree: fromstring) -> dict:
     return result
 
 
-def profile(tree: fromstring) -> dict:
+def profile(tree: HtmlElement) -> dict:
     all_parameters = ["avoid", "max", "crit", "damage", "dmg", "miss", "flight", "consume", "eco", "str", "hit",
                       "less", "find", "split", "production", "merging", "restore", "increase"]
     medals_headers = ["congress", "cp", "train", "inviter", "subs", "work", "bh", "rw", "tester", "tournament"]

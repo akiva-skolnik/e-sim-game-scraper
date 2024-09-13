@@ -2,7 +2,7 @@
 from re import finditer
 
 import requests
-from lxml.html import fromstring
+from lxml.html import fromstring, HtmlElement
 
 
 def get_tree(link: str) -> fromstring:
@@ -37,7 +37,7 @@ def get_id(string: str) -> str:
     return "".join(x for x in string.split("=")[-1].split("&")[0] if x.isdigit())
 
 
-def get_ids_from_path(tree: fromstring, path: str) -> list:
+def get_ids_from_path(tree: HtmlElement, path: str) -> list:
     """get ids from path"""
     ids = tree.xpath(path + ("/@href" if "/@href" not in path else ""))
     if ids and any("#" == x for x in ids):
@@ -58,3 +58,11 @@ def redirect_statistics(link: str) -> str:
     selected_site = link.split("selectedSite=")[-1].split("&")[0]
     return link.replace("statistics.html?selectedSite=" + selected_site,
                         camelCase(selected_site) + "Statistics.html").replace("&", "?", 1)
+
+
+def strip(data: tuple or list, apply_function: callable = None) -> tuple:
+    # same as tuple(func(x.strip()) for x in data if x.strip()), but faster
+    if apply_function:
+        return tuple(map(apply_function, filter(None, map(str.strip, data))))
+    else:
+        return tuple(filter(None, map(str.strip, data)))
