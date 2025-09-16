@@ -338,8 +338,8 @@ def stockCompanyMoney(tree: HtmlElement) -> dict:
 def achievement(tree: HtmlElement) -> dict:
     last_page = tree.xpath("//ul[@id='pagination-digg']//li[last()-1]//@href") or ['page=1']
     last_page = int(last_page[0].split('page=')[1])
-    ids = get_ids_from_path(tree, '//*[@id="esim-layout"]//div[3]//div/a')
-    nicks = [x.strip() for x in tree.xpath('//*[@id="esim-layout"]//div[3]//div/a/text()')]
+    ids = get_ids_from_path(tree, '//td/div[3]//div/a')
+    nicks = [x.strip() for x in tree.xpath('//td/div[3]//span[contains(@class,"citizenName")]/text()') if x.strip()]
     category, achieved_by = [x.split(":")[1].strip() for x in
                              tree.xpath('//*[@id="esim-layout"]//div[1]//div[2]/text()') if x.strip()]
     description = tree.xpath('//*[@class="foundation-style columns column-margin-vertical help"]/i/text()')[0].strip()

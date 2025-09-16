@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="e-sim-game-scraper",  # https://pypi.org/project/e-sim-game-scraper
-    version='0.0.10',
+    version='0.0.11',
     author="Akiva",
     author_email="akiva0003@gmail.com",
     url=f"https://github.com/akiva-skolnik/e-sim-game-scraper",
