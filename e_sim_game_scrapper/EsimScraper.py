@@ -388,8 +388,8 @@ def citizenStatistics(tree: HtmlElement, link: str) -> dict:
     except:
         statistic_type = tree.xpath('//*[@name="statisticType"]//option[1]')[0].text
     country_id = int(tree.xpath('//*[@id="countryId"]//option[@selected="selected"]/@value')[0])
-    ids = get_ids_from_path(tree, "//td/a")
-    nicks = tree.xpath("//td/a/text()")
+    ids = get_ids_from_path(tree, "//td/div/a")
+    nicks = [x.strip() for x in tree.xpath('//td/div//span[contains(@class,"citizenName")]/text()') if x.strip()]
     countries = tree.xpath("//td[3]/b/text()")
     values = tree.xpath("//tr[position()>1]//td[4]/text()") if citizens else tree.xpath(
         "//tr[position()>1]//td[4]/b/text()")
