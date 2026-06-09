@@ -770,10 +770,20 @@ def profile(tree: HtmlElement) -> dict:
 
     medals = {}
     for i, medal in enumerate(medals_headers, 1):
-        medalse_count = tree.xpath(f"//*[@id='medals']//ul//li[{i}]//div//text()")
-        if medalse_count:
-            medals[medal.lower()] = int(medalse_count[0].replace("x", ""))
-        elif "emptyMedal" not in tree.xpath(f"//*[@id='medals']//ul//li[{i}]/img/@src")[0]:
+        medal_count = next((
+            "".join(x for x in text if x.isdigit())
+            for text in tree.xpath(
+                f"(//*[@id='medals']/div[contains(concat(' ', normalize-space(@class), ' '), ' flex-column ')])"
+                f"[{i}]//strong/text()"
+            )
+            if "".join(x for x in text if x.isdigit())
+        ), "")
+        medals_count = tree.xpath(f"//*[@id='medals']//ul//li[{i}]//div//text()")
+        if medal_count:
+            medals[medal.lower()] = int(medal_count)
+        elif medals_count:
+            medals[medal.lower()] = int("".join(x for x in medals_count[0] if x.isdigit()) or 0)
+        elif any("emptyMedal" not in src for src in tree.xpath(f"//*[@id='medals']//ul//li[{i}]/img/@src")):
             medals[medal.lower()] = 1
         else:
             medals[medal.lower()] = 0
